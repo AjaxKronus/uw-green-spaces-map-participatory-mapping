@@ -2,12 +2,11 @@
 <html>
 
 <head>
-    <title>A Minimum Viable Participatory Mapping Project</title>
+    <title>UW Study Spots Participatory Map</title>
     <script src="https://unpkg.com/maplibre-gl@3.1.0/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.1.0/dist/maplibre-gl.css" rel="stylesheet" />
     <!-- Styles for the map and popup -->
     <style>
-        /* Basic CSS for the page */
         body {
             margin: 0;
             padding: 0;
@@ -34,6 +33,7 @@
             line-height: 1.5;
             color: #000000;
             z-index: 1;
+            box-shadow: 0 0 8px rgba(0,0,0,0.15);
         }
         
         #popup {
@@ -54,6 +54,16 @@
 
         #submit {
             float: right;
+            background-color: #4b2e83;
+            color: #ffffff;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        #submit:hover {
+            background-color: #392263;
         }
     </style>
 </head>
@@ -64,19 +74,15 @@
     
     <!-- Information box -->
     <div id="info">
-        <h3>A Minimum Viable Participatory Mapping Project</h3>
-        <h4>Bo Zhao | University of Washington </h4>
-        <!-- Introduction to the participatory mapping solution -->
+        <h3>UW Study Spots Participatory Map</h3>
+        <h4>Share your favorite places to read, write, and think</h4>
         <p>
-            This map is a minimum viable solution to participatory mapping.
-            Users can contribute their local knowledge by clicking on the map,
-            submitting their information, and viewing it represented as a red dot.
-            Existing contributions can also be viewed as red dots. While this map only offers
-            basic functionality, it can be expanded or repurposed to build your own participatory mapping projects. To help you envision what this map can assist you, you can take a look at a few existing projects, such as <a href="https://hgis.uw.edu/lgbtqspaces/" target="_blank"><b>Shifting LGBTQ+ spaces</b></a>,
-            <a href="https://hgis.uw.edu/chop"> <b>Archiving the CHOP</b></a> and <a href="https://www.queeringthemap.com/" target="_blank"><b>Queering the Map</b></a>.
-            An instruction can be found 
-            <a href="https://www.github.com/jakobzhao/participatory-mapping" target="_blank">here</a>.
-            <i>Last update: June 23, 2023</i>
+            This map invites members of the University of Washington community to share their favorite study spots,
+            both on campus and around Seattle. Click anywhere on the map to add a point, describe what makes that
+            place special, and see it appear as a marker that others can explore.
+            Your contributions help new students discover welcoming, quiet, and inspiring locations to learn.
+            This project is adapted from Bo Zhao’s participatory mapping template for GEOG 458 at UW.
+            <i>Last update: February 2026</i>
         </p> 
     </div>
     
@@ -91,13 +97,12 @@
             'features': []
         };
         
-        // Create a new map instance
+        // Create a new map instance (centered on UW Seattle, using your MapTiler key)
         let map = new maplibregl.Map({
-            container: 'map', // container id
-            style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=Cusoe5zmfmn26glFoeoe', // style URL
-            center: [-122.3321, 47.6062], // starting position [lng, lat]
-            // pitch: 45, // pitch in degrees
-            zoom: 12 // starting zoom
+            container: 'map',
+            style: 'https://api.maptiler.com/maps/pastel/style.json?key=7gY4Hmtjujo9GcyQr4dt',
+            center: [-122.3035, 47.6553], // UW Seattle
+            zoom: 13
         });
 
         // Fetch existing records when the window is loaded
@@ -136,8 +141,10 @@
                 'type': 'circle',
                 'source': 'places',
                 'paint': {
-                    'circle-radius': 6,
-                    'circle-color': '#B42222'
+                    'circle-radius': 7,
+                    'circle-color': '#4b2e83',      // UW purple
+                    'circle-stroke-color': '#ffffff',
+                    'circle-stroke-width': 1
                 }
             });
         });
@@ -159,7 +166,10 @@
         // Remove popup on mouse leave from an existing point
         map.on('mouseleave', 'placesLayer', function () {
             map.getCanvas().style.cursor = '';
-            popup.remove();
+            if (popup) {
+                popup.remove();
+                popup = null;
+            }
         });
 
         // Handle click event on the map to allow user contribution
@@ -169,7 +179,11 @@
             }
 
             // Create the HTML content for the contribution popup
-            const popupContent = '<div id="popup"><input type="text" id="name" placeholder="Input your name here..."><input type="text" id="content" placeholder="Input your message here..."><button id="submit">submit</button></div>';
+            const popupContent = '<div id="popup">' +
+                '<input type="text" id="name" placeholder="Your name or initials...">' +
+                '<input type="text" id="content" placeholder="Describe this study spot...">' +
+                '<button id="submit">submit</button>' +
+                '</div>';
 
             // Create a new popup and set its content
             popup = new maplibregl.Popup({ closeOnClick: false })
@@ -205,7 +219,6 @@
                 // Send the POST request to add the new record
                 await fetch('https://pmap-28a9a9408e2b.herokuapp.com/api/add-record', settings);
             } catch (err) {
-                // Handle any errors that occur during the request
                 console.error(err);
             } finally {
                 // Remove the popup and update the GeoJSON data with the new point
